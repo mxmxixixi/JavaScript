@@ -2982,7 +2982,93 @@ Array.of(1, 2) // [1, 2]
 // [1, 2, 4, 5]
 ```
 
+## 第二十一章 Class基本语法
 
+### 21.1 简介
+
+#### 21.1.1 es5实现
+
+在es5中使用构造函数，在原型链上添加方法的方法实现实例对象
+
+```javascript
+function Point(x, y) {
+  this.x = x;
+  this.y = y;
+}
+
+Point.prototype.toString = function () {
+  return '(' + this.x + ', ' + this.y + ')';
+};
+
+var p = new Point(1, 2);
+```
+
+此种方法和传统的面向对象有很大的差别，因此es6中出现了class
+
+#### 21.1.2 es6实现
+
+##### 21.1.2 .1 class
+
+es6中添加class，可以定义类，实际上class就是es5中实现面向对象的方法糖，把es5中实现的功能进行封装，形成了class，实现的原理完全相同，使用class可以让对象原型的写法更加清晰、更像面向对象编程的语法而已,类不存在变量提升（hoist）
+
+```javascript
+class Point {
+  constructor(x, y) {
+    this.x = x;
+    this.y = y;
+  }
+
+  toString() {
+    return '(' + this.x + ', ' + this.y + ')';
+  }
+}
+```
+
+上面代码定义了一个“类”，可以看到里面有一个`constructor()`方法，这就是构造方法，而`this`关键字则代表实例对象。这种新的 Class 写法，本质上与本章开头的 ES5 的构造函数`Point`是一致的。类的所有方法都定义在类的`prototype`属性上面。在类的实例上面调用方法，其实就是调用原型上的方法;`prototype`对象的`constructor()`属性，直接指向“类”的本身,这与 ES5 的行为是一致的;类的内部所有定义的方法，都是不可枚举的,这一点与 ES5 的行为不一致。
+
+##### 21.1.2 .2 constructor方法
+
+`constructor()`方法是类的默认方法，通过`new`命令生成对象实例时，自动调用该方法，然后返回实例对象(即this)，也可以指定返回另一个对象，这样的话该实例不是该类的实例。
+
+一个类必须有`constructor()`方法，如果没有显式定义，一个空的`constructor()`方法会被默认添加。
+
+##### 21.1.2 .3 取值函数（getter）和存值函数（setter）
+
+```javascript
+class MyClass {
+  constructor() {
+    // ...
+  }
+  get prop() {
+    return 'getter';
+  }
+  set prop(value) {
+    console.log('setter: '+value);
+  }
+}
+let inst = new MyClass();
+inst.prop = 123;
+```
+
+##### 21.1.2 .4 静态方法
+
+类相当于实例的原型，所有在类中定义的方法，都会被实例继承。如果在一个方法前，加上`static`关键字，就表示该方法不会被实例继承，而是直接通过类来调用，这就称为“静态方法”。如果静态方法包含`this`关键字，这个`this`指的是类，而不是实例,父类的静态方法，可以被子类继承
+
+```javascript
+class Foo {
+  static classMethod() {
+    return 'hello';
+  }
+}
+
+Foo.classMethod() // 'hello'
+
+var foo = new Foo();
+foo.classMethod()
+// TypeError: foo.classMethod is not a function
+```
+
+##### 21.1.2 .5 静态属性
 
 ## Generator 函数的语法
 
