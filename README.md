@@ -3111,7 +3111,76 @@ const p = new Proxy(target, handler)
 
 #### 12.2 Proxy.revocable()
 
+> `**Proxy.revocable()**` 方法可以用来创建一个可撤销的代理对象。
+
+##### 12.2.1 语法以及参数
+
+```javascript
+//target:用Proxy封装的目标对象，可以是任何类型的对象，包括原生数组、函数，代理对象
+//handler:一个通常以函数作为属性的对象，各属性中的函数分别定义了在执行各种操作时的行为。
+let {proxy, revoke} = Proxy.revocable(target, handler);
+```
+
+##### 12.2.1 返回值
+
+```javascript
+//proxy:表示新生成代理对象本身，和new Proxy创建的代理对象没有区别，只是它可以被撤销
+//revoke:它表示撤销的方法， 调用时不需要参数，可以直接撤销调和它一起生成的代理对象，当执行revoke函数之后，再访问proxy代理对象会抛错
+let target = {};
+let handler = {};
+
+let {proxy, revoke} = Proxy.revocable(target, handler);
+
+proxy.foo = 123;
+proxy.foo // 123
+
+revoke();
+proxy.foo // TypeError: Revoked
+```
+
+##### 12.2.3 使用场景
+
+> `Proxy.revocable()`的一个使用场景是，目标对象不允许直接访问，必须通过代理访问，一旦访问结束，就收回代理权，不允许再次访问。
+
 #### 12.2 handler 对象的方法
+
+## 第十三章 Module语法
+
+### 问题记录
+
+- <font color="red">Cannot use import statement outside a module</font>
+
+  ```javascript
+  在运行js文件中，使用es6的export导出模块报以上错误
+  import CreateBinaryTree from '../ArrToTree.js'
+var flipMatchVoyage = function(root, voyage) {}
+  解决过程：
+  npm init -y
+  在 package.json 中添加字段 type
+  {
+    "name": "Algorithm-to-develop",
+    "version": "1.0.0",
+    "description": "算法养成",
+    "main": "index.js",
+    "type": "module",
+    "scripts": {
+      "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "repository": {
+      "type": "git",
+      "url": "git+https://github.com/mxmxixixi/Algorithm-to-develop.git"
+    },
+    "keywords": [],
+    "author": "",
+    "license": "ISC",
+    "bugs": {
+      "url": "https://github.com/mxmxixixi/Algorithm-to-develop/issues"
+    },
+    "homepage": "https://github.com/mxmxixixi/Algorithm-to-develop#readme"
+  }
+  
+  ```
+  
 
 ## Generator 函数的语法
 
