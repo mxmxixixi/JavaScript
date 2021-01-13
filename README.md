@@ -3142,7 +3142,203 @@ proxy.foo // TypeError: Revoked
 
 > `Proxy.revocable()`的一个使用场景是，目标对象不允许直接访问，必须通过代理访问，一旦访问结束，就收回代理权，不允许再次访问。
 
-#### 12.2 handler 对象的方法
+#### 12.3 handler 对象的方法
+
+##### 12.3.1 get()方法
+
+###### 12.3.1.1 概念
+
+`get`方法用于拦截某个属性的读取操作，可以接受三个参数，依次为目标对象、属性名和 proxy 实例本身（严格地说，是操作行为所针对的对象），其中最后一个参数可选，返回任意值；
+
+###### 12.3.1.2 拦截行为
+
+> get方法一共拦截几种行为：
+
+- 访问属性: `proxy[foo]和` `proxy.bar`；
+
+- 访问原型链上的属性: `Object.create(proxy)[foo]`；
+
+- `Reflect.get()`
+
+- ```javascript
+  var person = {
+    name: "张三"
+  };
+  
+  var proxy = new Proxy(person, {
+    get: function(target, propKey) {
+      if (propKey in target) {
+        return target[propKey];
+      } else {
+        throw new ReferenceError("Prop name \"" + propKey + "\" does not exist.");
+      }
+    }
+  });
+  
+  proxy.name // "张三"
+  proxy.age // 抛出一个错误
+  let obj = Object.create(proto);
+  obj.name // "张三"
+  ```
+
+###### 12.3.1.3 约束行为
+
+> 如果违背了以下的约束，proxy会抛出 `TypeError`:
+
+- 如果要访问的目标属性是不可写以及不可配置的，则返回的值必须与该目标属性的值相同;
+
+- 如果要访问的目标属性没有配置访问方法，即get方法是undefined的，则返回值必须为undefined。
+
+- ```javascript
+  var obj = {};
+  Object.defineProperty(obj, "a", {
+    configurable: false,
+    enumerable: false,
+    value: 10,
+    writable: false
+  });
+  
+  var p = new Proxy(obj, {
+    get: function(target, prop) {
+      return 20;
+    }
+  });
+  
+  p.a; //会抛出TypeError
+  ```
+
+##### 12.3.2 set()方法
+
+###### 12.3.2.1 概念
+
+`set`方法用来拦截某个属性的赋值操作，可以接受四个参数，依次为目标对象、属性名、属性值和 Proxy 实例本身，其中最后一个参数可选,，返回布尔值
+
+###### 12.3.2.2 拦截行为
+
+>  set方法一共拦截几种行为：
+
+- 指定属性值：`proxy[foo] = bar` 和 `proxy.foo = bar`
+
+- 指定继承者的属性值：`Object.create(proxy)[foo] = bar`
+
+- `Reflect.set()`
+
+- ```javascript
+  let validator = {
+    set: function(obj, prop, value) {
+      if (prop === 'age') {
+        if (!Number.isInteger(value)) {
+          throw new TypeError('The age is not an integer');
+        }
+        if (value > 200) {
+          throw new RangeError('The age seems invalid');
+        }
+      }
+  
+      // 对于满足条件的 age 属性以及其他属性，直接保存
+      obj[prop] = value;
+    }
+  };
+  
+  let person = new Proxy({}, validator);
+  
+  person.age = 100;
+  
+  person.age // 100
+  person.age = 'young' // 报错
+  person.age = 300 // 报错
+  ```
+
+###### 12.3.2.3 约束行为
+
+> 如果违背以下的约束条件，proxy 会抛出一个 `TypeError` 异常：
+
+- 若目标属性是一个不可写及不可配置的数据属性，则不能改变它的值。
+
+- 如果目标属性没有配置存储方法，即 `[[Set]]` 属性的是 `undefined`，则不能设置它的值。
+
+- 在严格模式下，如果 `set()` 方法返回 `false`，那么也会抛出一个 `TypeError`异常。
+
+- ```javascript
+  const obj = {};
+  Object.defineProperty(obj, 'foo', {
+    value: 'bar',
+    writable: false,
+  });
+  
+  const handler = {
+    set: function(obj, prop, value, receiver) {
+      obj[prop] = 'baz';
+    }
+  };
+  
+  const proxy = new Proxy(obj, handler);
+  proxy.foo = 'baz';
+  proxy.foo // "bar"
+  
+  'use strict';
+  const handler = {
+    set: function(obj, prop, value, receiver) {
+      obj[prop] = receiver;
+      // 无论有没有下面这一行，都会报错
+      return false;
+    }
+  };
+  const proxy = new Proxy({}, handler);
+  proxy.foo = 'bar';
+  // TypeError: 'set' on proxy: trap returned falsish for property 'foo'
+  ```
+
+##### 12.3.3 construct()方法
+
+###### 12.3.3.1 概念
+
+`**handler.construct()**` 方法用于拦截new操作符. 为了使new操作符在生成的Proxy对象上生效，用于初始化代理的目标对象自身必须具有[[Construct]]内部方法（即 `new target` 必须是有效的），construct()`方法可以接受三个参数。
+
+- `target`：目标对象。
+- `args`：构造函数的参数数组。
+- `newTarget`：创造实例对象时，`new`命令作用的构造函数
+- 返回一个对象
+
+###### 12.3.3.2 拦截行为
+
+> 用于拦截new操作符
+
+- `new proxy(...args)`
+
+- `Reflect.construct()`
+
+- ```javascript
+  var p = new Proxy(function() {}, {
+    construct: function(target, argumentsList, newTarget) {
+      console.log('called: ' + argumentsList.join(', '));
+      return { value: argumentsList[0] * 10 };
+    }
+  });
+  
+  console.log(new p(1).value); // "called: 1"
+                               // 10
+  ```
+
+###### 12.3.3.3 约束行为
+
+如果违反以下约定，代理将会抛出错误 `TypeError`：
+
+- 必须返回一个对象.
+
+- ```javascript
+  var p = new Proxy(function() {}, {
+    construct: function(target, argumentsList, newTarget) {
+      return 1;
+    }
+  });
+  
+  new p(); // TypeError is thrown
+  ```
+
+##### 12.3.4 其他方法
+
+> 其他方法未列出，具体用到时看文档
 
 ## 第十三章 Module语法
 
