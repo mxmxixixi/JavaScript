@@ -67,6 +67,8 @@
 
 > 实际上，undefined值是派生null值的，null == undefined为true，null === undfined为false
 
+> null与自身是全等关系
+
 #### 3.4.4 Boolean类型
 > Boolean类型有两个值：true，false
 
@@ -316,38 +318,102 @@ var color = [];color.push("blue","green");color.shift();//"blue"
 var color = [];color.unshift("blue","green");color.pop();//"green"
 ```
 #### 5.2.5 重排序方法
-> reverse()反转数组项的顺序
 
-```
-var color = ["red","blue","green"];color.reverse();//["green", "blue", "red"]
-```
-> sort()默认情况下按照升序排列数组项，为了实现排序，sort()方法会调用每个数组项的toString(),然后得到比较的字符串；改变原数组，不是纯函数
+- reverse()
 
-> sort()在进行比较字符串时，数字无法正常排序，因此sort()方法可以接受一个比较函数作为参数，以便我们指定哪个值在哪个值的前面；比较函数接收两个参数(默认升序)，如果第一个参数应该位于第二个之前则返回一个负数，如果两个参数相等则返回0，如果第一个参数应该位于第二个之后则返回一个正数。
+  - reverse()反转数组项的顺
 
-```
-function compore(value1,value2){
-    if(value1 < value2){
-        return -1
-    }else if(value1 > value2){
-        return 1 
-    }else{
-        return 0
+  - ```javascript
+    var color = ["red","blue","green"];color.reverse();//["green", "blue", "red"]
+    ```
+
+- sort()
+
+  - sort()默认情况下按照升序排列数组项，为了实现排序，sort()方法会调用每个数组项的toString(),然后得到比较的字符串；改变原数组，不是纯函数
+
+  - sort()在进行比较字符串时，数字无法正常排序，因此sort()方法可以接受一个比较函数作为参数，以便我们指定哪个值在哪个值的前面；比较函数接收两个参数(默认升序)，如果第一个参数应该位于第二个之前则返回一个负数，如果两个参数相等则返回0，如果第一个参数应该位于第二个之后则返回一个正数。
+
+  - ```javascript
+    function compore(value1,value2){
+        if(value1 < value2){
+            return -1
+        }else if(value1 > value2){
+            return 1 
+        }else{
+            return 0
+        }
     }
-}
-[1,3,2,6,4,9,2].sort(compore);//[1, 2, 2, 3, 4, 6, 9]
-["1","3","2","6","4","9","2"].sort(compore);//["1", "2", "2", "3", "4", "6", "9"]
-```
-> 对于上面的compore函数用于数组中每一项的类型为Number、String
+    [1,3,2,6,4,9,2].sort(compore);//[1, 2, 2, 3, 4, 6, 9]
+    ["1","3","2","6","4","9","2"].sort(compore);//["1", "2", "2", "3", "4", "6", "9"]
+    ```
 
-> 对于数组中每一项的类型为数值类型或者valueof()方法返回数值类型，可以使用简单的比较函数
+  - 对于上面的compore函数用于数组中每一项的类型为Number、String；
 
-```
-function compare(value1, value2){ 
-    return value1 - value2; 
-};
-[1,3,5,2,9,5].sort(compare);//[1, 2, 3, 5, 5, 9]
-```
+  - sort源码解析
+
+    查看两个版本的v8源码
+    
+    ```javascript
+  //https://github.com/v8/v8/blob/5.9.221/src/js/array.js#L709
+    //此方法的入口
+    utils.InstallFunctions(GlobalArray.prototype, DONT_ENUM, [
+      ...
+      "sort", getFunction("sort", ArraySort),
+      ...
+    ])
+    //进入InnerArraySort,对类数组对象以及空洞数组进行特殊处理，然后进行排序
+    //之后看快速排序，仔细看里面的备注，都是性能优化的点
+      function QuickSort (a, from, to) {
+      // 基准选择第一个元素
+      var third_index = 0;
+      while (true) {
+        // 待排序数组长度 <= 10 采用插入排序
+        if (to - from <= 10) {
+          InsertionSort(a, from, to);
+          return;
+        }
+        if (to - from > 1000) {
+          // 每隔 200 ~ 215 （根据 length & 15的结果）个元素取一个值，
+          // 然后将这些值进行排序，取中间值的下标
+          // 这里的排序其实又是一个递归调用
+          third_index = GetThirdIndex(a, from, to);
+        } else {
+          // 将中间元素设为基准值
+          third_index = from + ((to - from) >> 1);
+        }
+        // 将第一个,中间元素（上面获取的基准值），最后一个元素三者中的中位数作为基准值
+        var v0 = a[from];
+        var v1 = a[to - 1];
+        var v2 = a[third_index];
+    		...
+        ...
+        ...
+    };
+    此版代码的bug：在执行ArraySort([1,2,13,14,5,6,17,18,9,10,11,12,31,41],()=>0)，不会原样输出，具体原因看代码，所以后来有了优化的代码
+    ```
+    
+    ```javascript
+    //https://github.com/v8/v8/blob/7.6.303/third_party/v8/builtins/array-sort.tq
+    此版的sort方法进行优化，使用TimSort算法进行排序；
+    参考链接:https://juejin.cn/post/6844904131518267400
+    主要思想融合了归并算法和二分插入排序算法的精髓；
+    ```
+    
+    
+
+- valueof()
+
+  - 对于数组中每一项的类型为数值类型或者valueof()方法返回数值类型，可以使用简单的比较函数
+
+  - ```javascript
+    function compare(value1, value2){ 
+        return value1 - value2; 
+    };
+    [1,3,5,2,9,5].sort(compare);//[1, 2, 3, 5, 5, 9]
+    ```
+
+    
+
 #### 5.2.6 操作方法
 > concat()可以基于当前数组中的所有项创建一个新数组，不改变原数组是纯函数
 
