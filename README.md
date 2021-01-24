@@ -392,6 +392,8 @@ var color = [];color.unshift("blue","green");color.pop();//"green"
     此版代码的bug：在执行ArraySort([1,2,13,14,5,6,17,18,9,10,11,12,31,41],()=>0)，不会原样输出，具体原因看代码，所以后来有了优化的代码
     ```
     
+    - es2019以后开始使用TimSort方法
+    
     ```javascript
     //https://github.com/v8/v8/blob/7.6.303/third_party/v8/builtins/array-sort.tq
     此版的sort方法进行优化，使用TimSort算法进行排序；
