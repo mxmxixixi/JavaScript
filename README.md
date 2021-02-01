@@ -1483,7 +1483,9 @@ console.log(arrValue(0,100,[]));
 
 ### 7.2 闭包
 
-> 闭包是有权访问另一个函数作用域中的变量的函数，创建闭包的常用方式就是在一个函数内部创建另一个函数；作用域链本质上是一个指向变量对象的指针列表，它只引用但不实际包含变量对象。
+> 在一个函数执行完毕后，函数作用域中的变量会进行销毁，使用闭包后且闭包中使用了某些变量，使用的变量不会在内存中销毁,会一直存在，但是执行的函数回从内存中清掉，所在闭包可能存在内存泄漏；
+
+> 闭包是有权访问**<font color='red'>另一个函数作用域</font>**中的变量的函数，创建闭包的常用方式就是在一个函数内部创建另一个函数；作用域链本质上是一个指向变量对象的指针列表，它只引用但不实际包含变量对象
 #### 7.2.1 闭包与变量
 > 闭包只能获取函数中任意变量的最后一个值，闭包所保存的是整个变量对象，而不是某个特殊的变量；
 
@@ -1535,7 +1537,7 @@ function createFunctions(){
 
 - <font color="red">闭包的用途</font>
   - 读取函数内部的变量
-  - 让这些变量的值始终保持在内存中。不会再f1调用后被自动清除。
+  - 让这些变量的值始终保持在内存中。不会在f1调用后被自动清除。
   - 方便调用上下文的局部变量。利于代码封装。
     原因：f1是f2的父函数，f2被赋给了一个全局变量，f2始终存在内存中，f2的存在依赖f1，因此f1也始终存在内存中，不会在调用结束后，被垃圾回收机制回收。
 
@@ -1678,6 +1680,47 @@ function createFunctions(){
     	}
     	setContent()
     ```
+    
+  - 支付时只支付一次
+
+    ```javascript
+    const once = (fn) => {
+      let done = false
+      return function(){
+        if(!done){
+          done = true
+          fn('支付')
+        }
+      }
+    }
+    const pay = once((msg)=>{
+      console.log("msg",msg)
+    })
+    pay()
+    pay()
+    //只会打印一次'支付'，因为done变量没有被回收，第二次调用时done的值为true
+    ```
+
+  - 求员工工资：相同参数不需要反复传递
+
+    ```javascript
+    const makeSalary = (base) => {
+      return function(performance){
+        return base+performance
+    	}
+    }
+    let salaryLevel1 = makeSalary(12000)
+    let salaryLevel2 = makeSalary(15000)
+    console.log("salaryLevel1",salaryLevel1(3000))
+    console.log("salaryLevel1",salaryLevel1(5000))
+    console.log("salaryLevel2",salaryLevel2(3000))
+    console.log("salaryLevel2",salaryLevel2(5000))
+    //在此闭包中不需要重复声明工资等级一、二的基本工资，只需要makeSalary(12000)一次就好，之后基本工资变量会在内存中一直存在，在调用salaryLevel时传不同的绩效则可以计算出不用的工资
+    ```
+
+    
+
+    
 
 
   - 防抖与节流
@@ -1756,7 +1799,18 @@ function outputNumbers(count){
 11. 可以使用构造函数模式、原型模式来实现自定义类型的特权方法，也可以使用模块模式、增强 的模块模式来实现单例的特权方法；
 12. JavaScript 中的函数表达式和闭包都是极其有用的特性，利用它们可以实现很多功能。不过，因为 创建闭包必须维护额外的作用域，所以过度使用它们可能会占用大量内存；
 
-### 7.5 题目
+### 7.5 函数式编程
+
+#### 7.5.1 函数是一等公民
+
+#### 7.5.2 高阶函数
+
+> 函数的参数是函数，或者函数的返回结果是函数，则此函数为高阶函数，例如数组的map，foreach的参数都是函数，所以他们都是高阶函数，使用函数作为参数可以使函数更加灵活；
+
+- 抽像可以屏蔽细节，只关注目标与结果；
+- 高阶函数用来抽象通用问题；
+
+### 7.6 题目
 
 1. ==闭包:函数定义与执行不在一个作用于内==
 2. ==自由变量(一个变量在当前作用域没有被定义，但是被使用了)的查找在函数定义的地方向上级作用于查找，不是函数执行的时候==
@@ -2797,6 +2851,10 @@ requestAnimationFrame()
 ![image-20200427182231402](/Users/naebunsakai/Library/Application Support/typora-user-images/image-20200427182231402.png)
 
 ![image-20200427182725816](/Users/naebunsakai/Library/Application Support/typora-user-images/image-20200427182725816.png)
+
+
+
+
 
 # ECMAScript 6 入门
 
