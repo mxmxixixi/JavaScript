@@ -2018,13 +2018,20 @@ function outputNumbers(count){
         ```
 4. ==手写bind==
     ```
+    //bind主要用途在于改变函数的this，所以bind的方法调用的主体是函数，为了让所有函数都可以访问到bind方法，要把bind方法放在函数构造函数的原型上，也就是Function.prototype
     Function.prototype.bindTemp = function(){
         //将参数变成数组
         const arg = Arrray.prototype.slice.call(arguments)
         const that = arg.shift()
+        //第一种方法
         const self = this
-        return function(){
-            return  self.apply(that,arg)
+        return function(parames){
+        //arg:bind定义参数，parames：执行参数
+            return  self.apply(that,arg,parames)
+        }
+        //第二种方法，箭头函不用保存this值，因为this直接指向上一层作用域
+        return (parames)=>{
+        		this.apply(that,arg,parames)
         }
     }
     ```
@@ -3671,7 +3678,7 @@ var flipMatchVoyage = function(root, voyage) {}
 
 ##### 概念
 
-> Promise是一个对象，表示异步任务最后的结果，是成功还是失败，不用结果对应不同的处理函数
+> Promise是一个对象，表示异步任务最后的结果，是成功还是失败，不同结果对应不同的处理函数
 
 ##### 链式调用
 
@@ -3679,7 +3686,7 @@ var flipMatchVoyage = function(root, voyage) {}
 
 ##### 异常处理
 
-> 链式调用中失败会走catch方法，所有Promise的错误会向下传递，所以catch是捕获的前一个Promise，而不是一直调用的第一个Promise，能捕获到信息，是因为错误信息会向下传递
+> 链式调用中失败会走catch方法，所有Promise的错误会向下传递，所以catch是捕获的前一个Promise，而不是调用的第一个Promise，能捕获到信息，是因为错误信息会向下传递，catch还能捕获到resolve后执行函数里面的错误信息
 
 ##### 静态方法
 
@@ -3691,21 +3698,20 @@ Promise.reject('foo')
 ##### 并行执行
 
 ```javascript
-Promise.all([])//所有Promise都成功，才会进入resolve，只要有一个失败，就会进入reject
-Promise.race([])//有Promise任务完成，则结果变成任务的状态
-Promise.allSettled([])//所有Promise后，该方法返回的新的 Promise 实例，一旦结束，状态总是fulfilled，不会根据任务的状态返回不同的状态
-Promise.any([])//要参数实例有一个变成fulfilled状态，包装实例就会变成fulfilled状态；如果所有参数实例都变成rejected状态，包装实例就会变成rejected状态。
+Promise.all([])//状态不定：所有Promise都成功，才会进入resolve，只要有一个失败，就会进入reject
+Promise.allSettled([])//状态固定(成功):所有Promise完成后，该方法返回的新的 Promise 实例，一旦结束，状态总是成功，不会根据任务的状态返回不同的状态
+Promise.race([])//状态不定：有Promise任务完成，则结果变成任务的状态
+Promise.any([])//状态不定：要参数实例有一个变成成功状态，包装实例就会变成成功状态；如果所有参数实例都变成失败状态，包装实例就会变成失败状态。
 ```
 
 ##### 执行时序
 
-
+- 宏任务：需要进行排队，一般异步任务都是宏任务
+- 微任务：不需要进行排队，直接进入队列，Promise是微任务
 
 ### 16.3 回调函数
 
 > 由调用者定义，交给执行者执行的函数，是所有异步函数的基础
-
-
 
 ### Generator 函数的语法
 
