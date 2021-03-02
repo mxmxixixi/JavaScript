@@ -3620,6 +3620,24 @@ proxy.foo // TypeError: Revoked
   Reflect.apply(Math.floor, undefined, [1.75]) // 1
   ```
 
+## 模板字符串
+
+### 带标签的模板字符串
+
+> 对模板字符串加工
+
+```javascript
+const name = 'mxm',age = 18
+//strings表示模板字符串中被变量分隔字符的数组，其余参数依次是变量
+const getInfo = (strings,name,age)=>{
+  return strings[0]+name+strings[1]+age
+}
+const result = getInfo`我是${name}，年龄${age}`
+console.log("result",result)//我是mxm，年龄18
+```
+
+
+
 ## 第十三章 Module语法
 
 ### 问题记录
@@ -3709,11 +3727,15 @@ Promise.any([])//状态不定：要参数实例有一个变成成功状态，包
 - 宏任务：需要进行排队，一般异步任务都是宏任务
 - 微任务：不需要进行排队，直接进入队列，Promise是微任务
 
+##### async
+
+async与await配套使用
+
 ### 16.3 回调函数
 
 > 由调用者定义，交给执行者执行的函数，是所有异步函数的基础
 
-### Generator 函数的语法
+### 16.4 Generator
 
 > generator是解决异步编程的方案
 
