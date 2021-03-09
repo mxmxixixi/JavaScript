@@ -245,6 +245,10 @@ var n = new M('mxm')
 //使用Object.create()
 var p = {name:'mxm'}
 var obj = Object.create(p)
+//设置属性-计算属性名,使用中括号包裹起来，里面是变量的名称
+var persson = {
+    [name]:"mxm@",
+}
 ```
 > 访问对象属性
 
@@ -817,7 +821,7 @@ sayColor.call(o);//"blue"
 
 > 浅拷贝只复制一层对象的属性，并不包括对象里面的为引用类型的数据。深拷贝是对对象以及对象的所有子对象进行拷贝。
 
-> objec.assgin不是深拷贝，它是第一层级的深层拷贝，深层级无法深拷贝
+> objec.assgin不是深拷贝，它是第一层级的深层拷贝，深层级无法深拷贝；扩展运算符也是浅拷贝，它是第一层级的深层拷贝，深层级无法深拷贝
 
 ```
 const arr1 = {
@@ -1235,7 +1239,7 @@ alert(person1.sayName === person2.sayName);//true
 #### 6.3.1 原型链
 > 利用原型让一个引用类型继承另一个引用类型的属性和方法；实际上是构造函数的实例指向的原型对象是另一个构造函数的实例
 
-```
+```javascript
 function SuperType(){ 
     this.property = true;
 }
@@ -1256,7 +1260,7 @@ alert(instance.getSuperValue());//true
 1. 别忘记默认的原型
 > ![原型继承图](/Users/naebunsakai/study/有道云笔记图片/prototypeExtend.png)
 2. 确定原型与实例的关系
-```
+```javascript
 alert(instance instanceof Object);//true
 alert(SubType.prototype.isPrototypeOf(instance));//true
 ```
@@ -1264,7 +1268,7 @@ alert(SubType.prototype.isPrototypeOf(instance));//true
 
 > 给原型添加方法的代码一定要放在替换原型的语句之后;
 
-```
+```javascript
 function SuperType(){ 
     this.property = true; 
 } 
@@ -1298,7 +1302,7 @@ alert(instance.getSuperValue()); //false
 #### 6.3.2 借用构造函数
 > 在子类型构造函数的内部调用超类型构造函数。别忘了，函数只不过是在特定环境中执行代码的对象， 因此通过使用apply()和call()方法也可以在（将来）新创建的对象上执行构造函数
 
-```
+```javascript
 function SuperType(){ 
     this.colors = ["red", "blue", "green"]; 
 } 
@@ -1313,7 +1317,7 @@ var instance2 = new SubType();
 alert(instance2.colors); //"red,blue,green"
 ```
 1. 传递参数
-```
+```javascript
 function SuperType(name){ 
     this.name = name; 
 } 
@@ -1334,7 +1338,7 @@ alert(instance.age); //29
 #### 6.3.3 组合继承
 > 使用原型链实现对原型属性和方法的继承，而通过借用构造函数来实现对实例属性的继承。这样，既通过在原型上定义方法实现了函数复用，又能够保证每个实例都有它自己的属性。
 
-```
+```javascript
 function SuperType(name){ 
     this.name = name; 
     this.colors = ["red", "blue", "green"]; 
@@ -1363,8 +1367,22 @@ instance2.sayName(); //"Greg";
 instance2.sayAge(); //27
 ```
 #### 6.3.4 原型式继承
+
+- 创建一个纯洁的对象，连原型都没有的对象
+- 创建方式Object.create()
+
+```javascript
+const parent = { age:18,gender:'男'};
+const student = Object.create(parent)
+console.log(student.__proto__ === parent)//true
+```
+
+
+
 #### 6.3.5 寄生式继承
 #### 6.3.6 寄生组合式继承
+### 设计模式
+
 ### 6.4 小结
 
 ### 6.5 题目
@@ -1374,7 +1392,7 @@ instance2.sayAge(); //27
 2. ==class的原型本质:原型与原型链的图《6.3.1 原型链》、属性和方法的执行规则==
 3. ==手写JQuery展示插件和扩展性==
 
-```
+```javascript
 class Jquery {
     constructor(dom){
         const result = document.querySelectorAll(dom)
@@ -3620,6 +3638,17 @@ proxy.foo // TypeError: Revoked
   Reflect.apply(Math.floor, undefined, [1.75]) // 1
   ```
 
+## 字符串扩展
+
+```javascript
+const msg = 'I am a girl'
+msg.startsWith('I')//true,以某字符串开头，返回布尔值
+msg.endsWith('girl')//true,以字符串结尾，返回布尔值
+msg.includes('girl')//是否包含某个字符串，返回布尔值
+```
+
+
+
 ## 模板字符串
 
 ### 带标签的模板字符串
@@ -3636,7 +3665,9 @@ const result = getInfo`我是${name}，年龄${age}`
 console.log("result",result)//我是mxm，年龄18
 ```
 
+## 对象扩展
 
+- Object.is(value1,value2):比较两个值在是否相等，返回布尔值，具体值比较参考https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Global_Objects/Object/is
 
 ## 第十三章 Module语法
 
@@ -3824,3 +3855,17 @@ Symbol.keyFor(s2) // undefined
 ## 可选链
 
 ### 
+
+# 事件记录
+
+### wheel
+
+```javascript
+//禁止浏览器在滚动时出现上下的白边
+const func = (e) => { e.preventDefault() }
+window.addEventListener('wheel', func, { passive: false })
+return () => {
+  window.removeEventListener('wheel', func, { passive: false })
+}
+```
+
