@@ -1266,9 +1266,10 @@ alert(SubType.prototype.isPrototypeOf(instance));//true
 ```
 3. 谨慎地定义方法
 
-> 给原型添加方法的代码一定要放在替换原型的语句之后;
+> 给原型添加方法的代码一定要放在替换原型的语句之后，否则添加的方法会被覆盖掉;
 
 ```javascript
+
 function SuperType(){ 
     this.property = true; 
 } 
@@ -1290,17 +1291,40 @@ SubType.prototype.getSuperValue = function (){
 }; 
 var instance = new SubType(); 
 alert(instance.getSuperValue()); //false
+
+
+//使用了对象字面量,完全形成了一个新的对象
+SubType.prototype = {
+  get:(new SuperType()).getSuperValue
+}; 
 ```
 > 在通过原型链实现继承时，不能使用对象字面量创建原型方法,因为这样做就会重写原型链;
 
 4. 原型链的问题 
 
-> 构造函数中包含引用类型，所有实例都有更改的权利，其中一个实例对引用类型的操作在另外一个实例中也可以体现出来；
+- 构造函数中包含引用类型，所有实例都有更改的权利，其中一个实例对引用类型的操作在另外一个实例中也可以体现出来；
 
-> 在创建子类型的实例时，不能向超类型的构造函数中传递参数；
+  ```javascript
+  function SuperType(){ 
+    this.colors = ["red", "blue", "green"];
+  }
+  function SubType(){ 
+  } 
+  //原型继承
+  SubType.prototype = new SuperType(); 
+  var instance1 = new SubType(); 
+  instance1.colors.push("black"); 
+  alert(instance1.colors); //"red,blue,green,black" 
+  var instance2 = new SubType(); 
+  alert(instance2.colors); //"red,blue,green,black"
+  ```
 
-#### 6.3.2 借用构造函数
-> 在子类型构造函数的内部调用超类型构造函数。别忘了，函数只不过是在特定环境中执行代码的对象， 因此通过使用apply()和call()方法也可以在（将来）新创建的对象上执行构造函数
+- 在创建子类型的实例时，不能向超类型的构造函数中传递参数；
+
+> 由于会存在以上问题，所以实践中很少单独使用原型链继承，以上两个问题可以用下面的继承方式解决
+
+#### 6.3.2 借用构造函数(伪造对象或经典继承)
+> 在子类型构造函数的内部调用超类型构造函数。别忘了，函数只不过是在特定环境中执行代码的对象， 因此通过使用apply()和call()，bind()方法也可以在（将来）新创建的对象上执行构造函数
 
 ```javascript
 function SuperType(){ 
@@ -1333,10 +1357,14 @@ alert(instance.age); //29
 ```
 2. 借用构造函数的问题
 
-> 无法函数复用
+- 无法函数复用
 
-#### 6.3.3 组合继承
+> 由于存在以上问题，所以借用构造函数的技术很少单独使用
+
+#### 6.3.3 组合继承(伪经典继承)
 > 使用原型链实现对原型属性和方法的继承，而通过借用构造函数来实现对实例属性的继承。这样，既通过在原型上定义方法实现了函数复用，又能够保证每个实例都有它自己的属性。
+
+> 组合继承避免了原型链继承和借用构造函数继承的缺陷，融合了他们的优点，成为了最长使用的继承模式
 
 ```javascript
 function SuperType(name){ 
@@ -1347,7 +1375,8 @@ SuperType.prototype.sayName = function(){
     alert(this.name);
 }; 
 function SubType(name, age){ 
-    //继承属性 SuperType.call(this, name); 
+    //继承属性 
+  	SuperType.call(this, name); 
     this.age = age; 
 } 
 //继承方法 
@@ -1376,8 +1405,6 @@ const parent = { age:18,gender:'男'};
 const student = Object.create(parent)
 console.log(student.__proto__ === parent)//true
 ```
-
-
 
 #### 6.3.5 寄生式继承
 #### 6.3.6 寄生组合式继承
@@ -1552,6 +1579,8 @@ function createFunctions(){
 
 > 如果想访问作用域中的this、arguments对象，必须将对该对象的引用保存到另一个闭包能够访问的变量中。
 #### 7.2.3 内存泄漏
+
+- 使用闭包后，记得将闭包函数置为null，这样可以释放闭包作用域链中的内存
 
 #### 7.2.4 闭包使用场景
 
@@ -2934,7 +2963,10 @@ box.addEventListener('drag',throttle((e){
     console.log('1111',e.offsetX,e.offsetY)
 },100))
 ```
+
+
 ## 安全
+
 1. XSS攻击:使用script获取cookie信息；预防：把左右尖括号替换成&lt;&gt
 2. CSRF攻击:使用img src属性进行访问链接(用户已经在网站中登陆注册过了)，此时已经带有用户信息；预防：使用post接口，增加验证
 
@@ -3868,4 +3900,3 @@ return () => {
   window.removeEventListener('wheel', func, { passive: false })
 }
 ```
-
