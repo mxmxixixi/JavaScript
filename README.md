@@ -200,7 +200,15 @@ if(obj.a === null || obj.a === undefined){}
 #### 4.2.2 没有块级作用域
 
 ### 4.3 垃圾收集
-#### 标记清除、引用计数、性能问题、管理内存
+#### 标记清除
+
+> 先标记变量，之后清楚进行给无标记的变量进行清除
+
+#### 引用计数
+
+> 无法消除循环引用的变量
+
+#### 、性能问题、管理内存
 
 ### 4.4 小结
 1. 基本类型值在内存中占据固定大小的空间，因此被保存在栈内存中；
@@ -1957,7 +1965,110 @@ function outputNumbers(count){
 
   ![image-20210206132521445](/Users/naebunsakai/study/notes/imgs/image-20210206132521445.png)
 
-### 7.6 题目
+### 7.6 函数调用方式
+
+#### 函数调用-this指向window
+
+```javascript
+//第一种
+function Person(name){
+  this.name = name//函数调用，this指向window
+}
+Person('abc')//函数调用，name属性被挂在在window上
+//第二种
+function fn(){
+  this.age = 18//函数调用，age属性被挂在在window上,this指向window
+}
+fn()
+console.log('age',age)//18
+//第三种
+var age = 18
+var p = {
+  age:15,
+  say:function(){
+    console.log(this.age)
+  }
+}
+var f1 = p.say
+f1()//此时打印出18，因为是函数调用
+```
+
+#### 方法调用-this指向调用方法的变量
+
+```javascript
+//第一种
+function Person(name){
+  this.name = name
+}
+Person.prototype.say = function(){
+  console.log("this",this)//方法调用-this指向调用方法的变量p1实例
+}
+const p1 = new Person('mxm')
+p1.say()
+//第二种
+var age = 18
+var p = {
+  age:15,
+  say:function(){
+    console.log(this.age)
+  }
+}
+p.say()//此时打印出15，因为是方法调用，this指向了调用方法的变量p
+//第三种
+var clear = function(){
+  console.log(this.length)
+}
+var length = 50;
+var tom = {c:clear,length:100}
+tom.c()//此时打印出100，this指向tom
+//第四种
+var clear = function(){
+  console.log(this.length)
+}
+var length = 50;
+var tom = {c:clear}
+tom.c()//此时打印出undefined,this指向tom,因为tom的原型链上无length属性，此属性在window上
+```
+
+#### 构造函数调用方式-指向构造函数的实例
+
+```javascript
+function Fn(name){
+  this.name = name
+}
+var n = new Fn()//此时是构造函数的方式调用，所以this指向构造函数的实例n，n上有属性name
+```
+
+#### 上下文调用方式【call,bind,apply】- this指向调用传递的第一个参数
+
+```javascript
+function f1(){
+  console.log(this)
+}
+f1.call([1,2,3])//打印出[1,2,3]
+f1.call({age:18})//打印出{age:18}
+f1.call(1)//打印出Number {1}
+f1.call('abc')//String {"abc"}
+f1.call(true)//Boolean {true}
+f1.call(undefined)//打印出window
+//call，apply,bind第一个参数的总结：
+//如果是一个引用类型，则this指向该对象
+//如果是null、undefined，则this指向window
+//如果是数字，则this指向对应Number构造函数的实例 
+//如果是字符串，则this指向对应String构造函数的实例
+//如果是布尔值，则this指向对应Boolean构造函数的实例
+
+bind的传参与call一样，但是他与call、apply不同的是，需要再执行一次
+function f1(){
+  console.log(this)
+}
+const _f1 = f1.bind({age:18})//此时改变f1的this指向，生成一个新的函数返回，此时f1函数并未执行
+_f1()
+```
+
+
+
+### 7.7 题目
 
 1. ==闭包:函数定义与执行不在一个作用于内==
 2. ==自由变量(一个变量在当前作用域没有被定义，但是被使用了)的查找在函数定义的地方向上级作用于查找，不是函数执行的时候==
