@@ -92,7 +92,7 @@
 
 #### 3.4.7 Object类型
 ==面试题==
-> 值类型存在栈中，引用类型存在堆中，引用类型的值是指针指向的值，存在不同的位置是性能的优化，值类型存储空间小，引用类型的值可能需要存储空间比较大
+> 值类型存在栈中，引用类型存在堆中，引用类型的值是指针指向的值，存在不同的位置是性能的优化，值类型存储空间小，引用类型的值可能需要存储空间比较大，闭包中的变量会保存在堆中，详情看闭包一节
 
 > 为什么基本数据类型保存在栈中，而引用数据类型保存在堆中？
 1）堆比栈大，栈比堆速度快；
@@ -1244,178 +1244,279 @@ alert(person1.sayName === person2.sayName);//true
 #### 6.2.6 寄生构造函数模式
 #### 6.2.7 稳妥构造函数模式
 ### 6.3 继承(面试中常问，可与es6中class一起学习)
-#### 6.3.1 原型链
-> 利用原型让一个引用类型继承另一个引用类型的属性和方法；实际上是构造函数的实例指向的原型对象是另一个构造函数的实例
+#### 6.3.1 原型链继承
+- 基本思想
 
-```javascript
-function SuperType(){ 
-    this.property = true;
-}
-SuperType.prototype.getSuperValue = function(){ 
-    return this.property;
-}; 
-function SubType(){ 
-    this.subproperty = false;
-} 
-//继承了 SuperType 
-SubType.prototype = new SuperType(); 
-SubType.prototype.getSubValue = function (){ 
-    return this.subproperty; 
-}; 
-var instance = new SubType(); 
-alert(instance.getSuperValue());//true
-```
-1. 别忘记默认的原型
-> ![原型继承图](/Users/naebunsakai/study/有道云笔记图片/prototypeExtend.png)
-2. 确定原型与实例的关系
-```javascript
-alert(instance instanceof Object);//true
-alert(SubType.prototype.isPrototypeOf(instance));//true
-```
-3. 谨慎地定义方法
-
-> 给原型添加方法的代码一定要放在替换原型的语句之后，否则添加的方法会被覆盖掉;
-
-```javascript
-
-function SuperType(){ 
-    this.property = true; 
-} 
-SuperType.prototype.getSuperValue = function(){ 
-    return this.property; 
-};
-function SubType(){ 
-    this.subproperty = false;
-} 
-//继承了 SuperType 
-SubType.prototype = new SuperType(); 
-//添加新方法 
-SubType.prototype.getSubValue = function (){ 
-    return this.subproperty; 
-};
-//重写超类型中的方法 
-SubType.prototype.getSuperValue = function (){ 
-    return false;
-}; 
-var instance = new SubType(); 
-alert(instance.getSuperValue()); //false
-
-
-//使用了对象字面量,完全形成了一个新的对象
-SubType.prototype = {
-  get:(new SuperType()).getSuperValue
-}; 
-```
-> 在通过原型链实现继承时，不能使用对象字面量创建原型方法,因为这样做就会重写原型链;
-
-4. 原型链的问题 
-
-- 构造函数中包含引用类型，所有实例都有更改的权利，其中一个实例对引用类型的操作在另外一个实例中也可以体现出来；
+  - 利用原型让一个引用类型继承另一个引用类型的属性和方法；实际上是构造函数的实例指向的原型对象是另一个构造函数的实例
 
   ```javascript
   function SuperType(){ 
-    this.colors = ["red", "blue", "green"];
+      this.property = true;
   }
+  SuperType.prototype.getSuperValue = function(){ 
+      return this.property;
+  }; 
   function SubType(){ 
+      this.subproperty = false;
   } 
-  //原型继承
+  //继承了 SuperType 
   SubType.prototype = new SuperType(); 
-  var instance1 = new SubType(); 
-  instance1.colors.push("black"); 
-  alert(instance1.colors); //"red,blue,green,black" 
-  var instance2 = new SubType(); 
-  alert(instance2.colors); //"red,blue,green,black"
+  SubType.prototype.getSubValue = function (){ 
+      return this.subproperty; 
+  }; 
+  var instance = new SubType(); 
+  alert(instance.getSuperValue());//true
+  
+  alert(instance instanceof Object);//true
+  alert(SubType.prototype.isPrototypeOf(instance));//true
   ```
 
-- 在创建子类型的实例时，不能向超类型的构造函数中传递参数；
+  默认的原型
 
-> 由于会存在以上问题，所以实践中很少单独使用原型链继承，以上两个问题可以用下面的继承方式解决
+> ![原型继承图](/Users/naebunsakai/study/有道云笔记图片/prototypeExtend.png)
+- 原型链-优点
+  - 继承了父类的模板，又继承了父类的原型对象
+
+- 原型链-缺点
+  - 父类构造函数中包含引用类型，所有实例都有更改的权利，其中一个实例对引用类型的操作在另外一个实例中也可以体现出来；
+
+    ```javascript
+    function SuperType(){ 
+      this.colors = ["red", "blue", "green"];
+    }
+    function SubType(){ 
+    } 
+    //原型继承
+    SubType.prototype = new SuperType(); 
+    var instance1 = new SubType(); 
+    instance1.colors.push("black"); 
+    alert(instance1.colors); //"red,blue,green,black" 
+    var instance2 = new SubType(); 
+    alert(instance2.colors); //"red,blue,green,black"
+    ```
+
+  - 在创建子类的实例时，不能向超类型的构造函数中传递参数，或者说是，没办法在不影响所有对象实例的情况下，向父类的构造函数传递参数
+
+    > 由于会存在以上问题，所以实践中很少单独使用原型链继承，以上两个问题可以用下面的继承方式解决
+
+  - 给原型添加方法的代码一定要放在替换原型的语句之后，否则添加的方法会被覆盖掉;在通过原型链实现继承时，不能使用对象字面量创建原型方法,因为这样做就会重写原型链;
+
+    ```javascript
+    function SuperType(){ 
+        this.property = true; 
+    } 
+    SuperType.prototype.getSuperValue = function(){ 
+        return this.property; 
+    };
+    function SubType(){ 
+        this.subproperty = false;
+    } 
+    //继承了 SuperType 
+    SubType.prototype = new SuperType(); 
+    //添加新方法 
+    SubType.prototype.getSubValue = function (){ 
+        return this.subproperty; 
+    };
+    //重写超类型中的方法 
+    SubType.prototype.getSuperValue = function (){ 
+        return false;
+    }; 
+    var instance = new SubType(); 
+    alert(instance.getSuperValue()); //false
+    
+    
+    //使用了对象字面量,完全形成了一个新的对象
+    SubType.prototype = {
+      get:(new SuperType()).getSuperValue
+    }; 
+    ```
+
+  - 无法实现多继承
 
 #### 6.3.2 借用构造函数(伪造对象或经典继承)
-> 在子类型构造函数的内部调用超类型构造函数。别忘了，函数只不过是在特定环境中执行代码的对象， 因此通过使用apply()和call()，bind()方法也可以在（将来）新创建的对象上执行构造函数
 
-```javascript
-function SuperType(){ 
-    this.colors = ["red", "blue", "green"]; 
-} 
-function SubType(){ 
-    //继承了 SuperType 
-    SuperType.call(this); 
-} 
-var instance1 = new SubType(); 
-instance1.colors.push("black"); 
-alert(instance1.colors); //"red,blue,green,black" 
-var instance2 = new SubType(); 
-alert(instance2.colors); //"red,blue,green"
-```
-1. 传递参数
-```javascript
-function SuperType(name){ 
-    this.name = name; 
-} 
-function SubType(){ 
-    //继承了 SuperType，同时还传递了参数 
-    SuperType.call(this, "Nicholas"); 
-    //实例属性 
-    this.age = 29; 
-} 
-var instance = new SubType(); 
-alert(instance.name); //"Nicholas";
-alert(instance.age); //29
-```
-2. 借用构造函数的问题
+- 基本思想
 
-- 无法函数复用
+  - 在子类型构造函数的内部调用超类型构造函数。别忘了，函数只不过是在特定环境中执行代码的对象， 因此通过使用apply()和call()，bind()方法也可以在（将来）新创建的对象上执行构造函数
+
+    ```javascript
+    function SuperType(){ 
+          this.colors = ["red", "blue", "green"]; 
+      } 
+      function SubType(){ 
+          //继承了 SuperType 
+          SuperType.call(this); 
+      } 
+      var instance1 = new SubType(); 
+      instance1.colors.push("black"); 
+      alert(instance1.colors); //"red,blue,green,black" 
+      var instance2 = new SubType(); 
+      alert(instance2.colors); //"red,blue,green"
+    ```
+
+    ```javascript
+    //传递参数
+    function SuperType(name){ 
+        this.name = name; 
+    } 
+    function SubType(){ 
+        //继承了 SuperType，同时还传递了参数 
+        SuperType.call(this, "Nicholas"); 
+        //实例属性 
+        this.age = 29; 
+    } 
+    var instance = new SubType(); 
+    alert(instance.name); //"Nicholas";
+    alert(instance.age); //29
+    ```
+
+- 借用构造函数-优点
+
+  - 解决了原型链继承中子类实例共享父类引用对象的问题，实现多继承，创建子类实例时，可以向父类传递参数
+
+- 借用构造函数-缺点
+
+  - 实例(instance)并不是父类的实例，只是子类的实例
+  - **只能**继承父类的实例属性和方法，**不能**继承原型属性/方法
+  - **无法实现函数复用**，每个子类都有父类实例函数的副本，影响性能
 
 > 由于存在以上问题，所以借用构造函数的技术很少单独使用
 
 #### 6.3.3 组合继承(伪经典继承)
-> 使用原型链实现对原型属性和方法的继承，而通过借用构造函数来实现对实例属性的继承。这样，既通过在原型上定义方法实现了函数复用，又能够保证每个实例都有它自己的属性。
 
-> 组合继承避免了原型链继承和借用构造函数继承的缺陷，融合了他们的优点，成为了最长使用的继承模式
+- 基本思想
 
-```javascript
-function SuperType(name){ 
-    this.name = name; 
-    this.colors = ["red", "blue", "green"]; 
-} 
-SuperType.prototype.sayName = function(){ 
-    alert(this.name);
-}; 
-function SubType(name, age){ 
-    //继承属性 
-  	SuperType.call(this, name); 
-    this.age = age; 
-} 
-//继承方法 
-SubType.prototype = new SuperType(); 
-SubType.prototype.constructor = SubType; 
-SubType.prototype.sayAge = function(){
-    alert(this.age); 
-}; 
-var instance1 = new SubType("Nicholas", 29); 
-instance1.colors.push("black"); 
-alert(instance1.colors); //"red,blue,green,black" 
-instance1.sayName(); //"Nicholas"; 
-instance1.sayAge(); //29 
-var instance2 = new SubType("Greg", 27); 
-alert(instance2.colors); //"red,blue,green" 
-instance2.sayName(); //"Greg"; 
-instance2.sayAge(); //27
-```
+  - 使用原型链实现对原型属性和方法的继承，而通过借用构造函数来实现对实例属性的继承。这样，既通过在原型上定义方法实现了函数复用，又能够保证每个实例都有它自己的属性。
+  - 组合继承避免了原型链继承和借用构造函数继承的缺陷，融合了他们的优点，成为了最长使用的继承模式
+
+  ```javascript
+  function SuperType(name){ 
+      this.name = name; 
+      this.colors = ["red", "blue", "green"]; 
+  } 
+  SuperType.prototype.sayName = function(){ 
+      alert(this.name);
+  }; 
+  function SubType(name, age){ 
+      //继承属性 
+    	SuperType.call(this, name); 
+      this.age = age; 
+  } 
+  //继承方法 
+  SubType.prototype = new SuperType(); 
+  SubType.prototype.constructor = SubType; 
+  SubType.prototype.sayAge = function(){
+      alert(this.age); 
+  }; 
+  var instance1 = new SubType("Nicholas", 29); 
+  instance1.colors.push("black"); 
+  alert(instance1.colors); //"red,blue,green,black" 
+  instance1.sayName(); //"Nicholas"; 
+  instance1.sayAge(); //29 
+  var instance2 = new SubType("Greg", 27); 
+  alert(instance2.colors); //"red,blue,green" 
+  instance2.sayName(); //"Greg"; 
+  instance2.sayAge(); //27
+  ```
+
+- 组合继承-缺点
+
+  - 调用了两次父类构造函数，生成了**两份实例**（子类实例将子类原型上的那份屏蔽了）
+
 #### 6.3.4 原型式继承
+
+- 基本思想
+  - 将子类的原型设置为父类的原型
 
 - 创建一个纯洁的对象，连原型都没有的对象
 - 创建方式Object.create()
 
 ```javascript
-const parent = { age:18,gender:'男'};
-const student = Object.create(parent)
-console.log(student.__proto__ === parent)//true
+// 父类
+function SuperType (name) {
+  this.colors = ["red", "blue", "green"];
+  this.name = name; // 父类属性
+}
+SuperType.prototype.sayName = function () { // 父类原型方法
+  return this.name;
+};
+
+/** 第一步 */
+// 子类，通过 call 继承父类的实例属性和方法，不能继承原型属性/方法
+function SubType (name, subName) {
+  SuperType.call(this, name); // 调用 SuperType 的构造函数，并向其传参 
+  this.subName = subName;
+}
+
+/** 第二步 */
+// 解决 call 无法继承父类原型属性/方法的问题
+// Object.create 方法接受传入一个作为新创建对象的原型的对象，创建一个拥有指定原型和若干个指定属性的对象
+// 通过这种方法指定的任何属性都会覆盖原型对象上的同名属性
+SubType.prototype = Object.create(SuperType.prototype, { 
+  constructor: { // 注意指定 SubType.prototype.constructor = SubType
+    value: SubType,
+    enumerable: false,
+    writable: true,
+    configurable: true
+  },
+  run : { 
+    value: function(){ // override
+      SuperType.prototype.run.apply(this, arguments); 
+       // call super
+       // ...
+    },
+    enumerable: true,
+    configurable: true, 
+    writable: true
+  }
+}) 
+
+/** 第三步 */
+// 最后：解决 SubType.prototype.constructor === SuperType 的问题
+// 这里，在上一步已经指定，这里不需要再操作
+// SubType.prototype.constructor = SubType;
+
+var instance = new SubType('An', 'sistenAn')
 ```
 
 #### 6.3.5 寄生式继承
 #### 6.3.6 寄生组合式继承
+
+- 基本思想
+
+  - 在组合继承中，调用了两次父类构造函数，这里  **通过通过寄生方式，砍掉父类的实例属性，这样，在调用两次父类的构造的时候，就不会初始化两次实例方法/属性，避免的组合继承的缺点**
+  - 借用 **构造函数** 继承 **属性** ，通过 **原型链的混成形式** 来继承 **方法**
+
+  ```javascript
+  / 父类
+  function SuperType (name) {
+    this.colors = ["red", "blue", "green"];
+    this.name = name; // 父类属性
+  }
+  SuperType.prototype.sayName = function () { // 父类原型方法
+    return this.name;
+  };
+  
+  // 子类
+  function SubType (name, subName) {
+    // 调用 SuperType 构造函数
+    SuperType.call(this, name); // ----第二次调用 SuperType，继承实例属性----
+    this.subName = subName;
+  };
+  
+  // ----第一次调用 SuperType，继承原型属性----
+  SubType.prototype = Object.create(SuperType.prototype)
+  
+  SubType.prototype.constructor = SubType; // 注意：增强对象
+  
+  let instance = new SubType('An', 'sisterAn')
+  ```
+
+- 寄生组合式继承-优点
+  - 只调用一次 `SuperType` 构造函数，只创建一份父类属性
+  - 原型链保持不变
+  - 能够正常使用 `instanceof` 与 `isPrototypeOf`
+
 ### 设计模式
 
 ### 6.4 小结
@@ -1571,6 +1672,8 @@ function createFunctions(){
 }
 ```
 > 依旧从作用域链的角度看结果，在createFunctions执行返回结果后，result每一项都是一个函数，在执行函数得出结果时，在作用域链新增了一层匿名函数的作用域的活动对象，在这个活动对象中找到函数要返回的结果，所以现在不需要在createFunctions活动对象中寻找结果，因此这个数组中函数返回的每一项都是索引值项；
+
+> 闭包中的变量存储在堆空间中，闭包会创建一个closure([ˈkloʊʒər] )对象存放变量
 
 > 闭包作用：1、读取函数内部的变量
 > 2、让这些变量的值始终保持在内存中。不会再f1调用后被自动清除。
@@ -3886,7 +3989,7 @@ var flipMatchVoyage = function(root, voyage) {}
 
 ##### 概念
 
-> Promise是一个对象，表示异步任务最后的结果，是成功还是失败，不同结果对应不同的处理函数
+> Promise是一个对象，表示异步任务最后的结果，是成功还是失败，不同结果对应不同的处理函数，**状态只更改一次，更改后不再改变**，Promise构造函数不是异步的函数，then方法，catch方法是异步函数
 
 ##### 链式调用
 
@@ -3914,12 +4017,30 @@ Promise.any([])//状态不定：要参数实例有一个变成成功状态，包
 
 ##### 执行时序
 
-- 宏任务：需要进行排队，一般异步任务都是宏任务
-- 微任务：不需要进行排队，直接进入队列，Promise是微任务
+- 宏任务：需要进行排队，一般异步任务都是宏任务;script` 、`setTimeout`、`setInterval` 、`setImmediate` 、`I/O` 、`UI rendering` 、 `postMessage` 、 `MessageChannel
+- 微任务：不需要进行排队，直接进入队列，promise.then是微任务;`MutationObserver`、`Promise.then()或catch()`、`Promise为基础开发的其它技术，比如fetch API`、`V8`的垃圾回收过程、`Node独有的process.nextTick` 、 `Object.observe`（已废弃；`Proxy` 对象替代）
 
 ##### async
 
 async与await配套使用
+
+##### 事件循环
+
+- 基本执行过程
+  - 首先执行 `script` 宏任务
+  - 执行同步任务，遇见微任务进入微任务队列，遇见宏任务进入宏任务队列
+  - 当前宏任务执行完出队，检查微任务列表【微任务优先执行】，有则依次执行，直到全部执行完
+  - 执行浏览器 UI 线程的渲染工作
+  - 检查是否有`Web Worker`任务，有则执行
+  - 执行下一个宏任务，回到第二步，依此循环，直到宏任务和微任务队列都为空
+
+##### 总结
+
+- `Promise` 构造函数是同步执行的， `then` 方法是异步执行的
+- `.then` 或者 `.catch` 的参数期望是函数，**传入非函数则会发生值透传，之后then里面的参数会直接执行**
+- `Promise`的状态一经改变就不能再改变，构造函数中的 `resolve` 或 `reject` 只有第一次执行有效，多次调用没有任何作用
+- `.then`方法是能接收两个参数的，第一个是处理成功的函数，第二个是处理失败的函数，再某些时候你可以认为`catch`是`.then`第二个参数的简便写法
+- 当遇到 `promise.then` 时， 如果当前的 `Promise` 还处于 `pending` 状态，我们并不能确定调用 `resolved` 还是 `rejected` ，只有等待 `promise` 的状态确定后，再做处理，所以我们需要把我们的两种情况的处理逻辑做成 `callback` 放入 `promise` 的回调数组内，当 `promise` 状态翻转为 `resolved`时，才将之前的 `promise.then` 推入微任务队列
 
 ### 16.3 回调函数
 
@@ -3933,7 +4054,7 @@ async与await配套使用
 
 ### 概述
 
-> 为一个对象添加属性时，保证属性名不冲突，es6中引入了`symbol原始类型`，使对象中的属性名是一个独一无二的值；所有对象的属性名有两种类型：字符串与symbol；symbol是原始类型不能添加属性，它是类似于字符串的数字类型；symbol可以接收一个字符串作为参数，表示对symbol的描述；
+> 为一个对象添加属性时，保证属性名不冲突，es6中引入了`symbol原始类型`，使对象中的属性名是一个独一无二的值；所有对象的属性名有两种类型：字符串与symbol；symbol是原始类型不能添加属性，它是类似于字符串的数字类型；symbol可以接收一个字符串作为参数，表示对symbol的描述，symbol是基本数据类型
 
 ```javascript
 let s1 = Symbol("dog")
@@ -4013,7 +4134,9 @@ Symbol.keyFor(s2) // undefined
 
 ## 可选链
 
-### 
+## 第二十一 Class 的继承
+
+> extends实现思想和寄生组合式继承一样
 
 # 事件记录
 
