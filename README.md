@@ -366,7 +366,7 @@ var color = [];color.unshift("blue","green");color.pop();//"green"
     查看两个版本的v8源码
     
     ```javascript
-  //https://github.com/v8/v8/blob/5.9.221/src/js/array.js#L709
+    //https://github.com/v8/v8/blob/5.9.221/src/js/array.js#L709
     //此方法的入口
     utils.InstallFunctions(GlobalArray.prototype, DONT_ENUM, [
       ...
@@ -2460,7 +2460,9 @@ returnedNode = someNode.insertBefore(newNode, someNode.lastChild); alert(newNode
 > Document类型表示文档，在浏览器中，document对象是HTMLDocument（继承自Document类型）的一个实例，表示整个HTML页面。而且，document对象是window对象的一个属性，因此可以将其作为全局对象来访问；Document类型可以表示HTML页面或者其他基于 XML的文档；
 
 1. 文档的子节点：
-```
+- document.documentElement表示html
+
+```javascript
 var html = document.documentElement; //取得对<html>的引用 ，所有浏览器都兼容
 alert(html === document.childNodes[0]); //true 
 alert(html === document.firstChild); //true
@@ -2779,7 +2781,7 @@ console.log("div element",div.firstElementChild,div.lastElementChild,div.previou
     1. DOM操作非常昂贵，避免频繁DOM操作
     2. 对DOM查询做缓存：10.2.4 使用NodeList
     3. 将频繁操作改为一次操作：10.1.8 DocumentFragment类型
-==面试题==
+    ==面试题==
 1. ==同步与异步区别==:同步是按照顺序一个一个去执行，异步是需要进行等待才会返回信息；同步会发生阻塞代码执行，异步不会阻塞代码执行；单线程：一次只能执行一条命令，只能排队进行（不能发生阻塞）
     ```
     console.log(100)
@@ -3253,6 +3255,8 @@ requestAnimationFrame()
 > 通过关键字var声明的变量，无论在哪里声明都会被当成当前作用域顶部生成的变量，这就是变量hoisting机制，而且var声明的变量可以在window中访问到
 
 - var变量在提升的过程中直接赋值默认值undefined
+- 所有未声明直接赋值的变量都会自动挂在顶层对象下，造成全局环境变量不可控、混乱
+- 允许多次声明同一变量而不报错，造成代码不容易维护
 
 ```javascript
 function getValue(type){
@@ -3266,6 +3270,20 @@ function getValue(type){
   console.log("value",value)//undefined
 }
 //代码中两处打印value值，没有报错说明value变量已经被声明，这就是hoisting的机制，会把var声明的变量直接提升到作用域的顶部声明
+
+//所有未声明直接赋值的变量都会自动挂在顶层对象下
+a = 2
+console.log(window.a) // 2
+
+function foo(){
+    b = 3
+}
+foo()
+console.log(window.b) // 3
+
+//允许多次声明同一变量而不报错，造成代码不容易维护
+var x = 1
+var x = 2
 ```
 
 - es6中强化了变量声明周期的控制
@@ -3941,7 +3959,7 @@ console.log("result",result)//我是mxm，年龄18
   ```javascript
   在运行js文件中，使用es6的export导出模块报以上错误
   import CreateBinaryTree from '../ArrToTree.js'
-var flipMatchVoyage = function(root, voyage) {}
+  var flipMatchVoyage = function(root, voyage) {}
   解决过程：
   npm init -y
   在 package.json 中添加字段 type
@@ -3968,7 +3986,6 @@ var flipMatchVoyage = function(root, voyage) {}
   }
   
   ```
-  
 
 ## 第十六章 异步编程
 
@@ -4139,6 +4156,15 @@ Symbol.keyFor(s2) // undefined
 
 > extends实现思想和寄生组合式继承一样
 
+# ECMAScript2018(Es9)
+
+## Promise.prototype.finally()
+
+- 返回一个 `Promise` ，在 `promise` 结束时，无论 `Promise` 运行成功还是失败，都会运行 `finally` ，类似于我们常用的  `try {...} catch {...} finally {...}`
+- `Promise.prototype.finally()` 避免了同样的语句需要在 `then()` 和 `catch()` 中各写一次的情况
+- `finally` 没有参数
+- `finally` 会将结果和 error 传递
+
 # ECMAScript2021(Es12)
 
 ## String.prototype.replaceAll()
@@ -4152,9 +4178,70 @@ Symbol.keyFor(s2) // undefined
 
 ## Promise.any()
 
-- 与Promise.race([])类似，Promise.race([])的返回状态不定：有Promise任务**完成**（完成代表接口已经请求完成，不代表接口请求成功），则结果变成任务的状态
-- Promise.any():只要其中的一个 promise 成功，就返回那个已经成功的 promise
-- Promise.any():如果可迭代对象中没有一个 promise 成功（即所有的 promises 都失败/拒绝），就返回一个失败的 promise
+- 定义
+
+  - 与Promise.race([])类似，Promise.race([])的返回状态不定：有Promise任务**完成**（完成代表接口已经请求完成，不代表接口请求成功），则结果变成任务的状态
+  - Promise.any():只要其中的一个 promise 成功，就返回那个已经成功的 promise，对第一个实现感兴趣。相反的情况（所有拒绝）导致拒绝
+  - Promise.any():如果可迭代对象中没有一个 promise 成功（即所有的 promises 都失败/拒绝），就返回一个失败的 promise
+
+- 应用场景
+
+  - 从最快的服务器检索资源：来自世界各地的用户访问网站，如果你有多台服务器，则尽量使用响应速度最快的服务器，在这种情况下，可以使用 `Promise.any()` 方法从最快的服务器接收响应
+
+  - 显示第一张已加载的图片
+
+    ```javascript
+     function fetchAndDecode(url) {
+        return fetch(url).then(response => {
+          if(!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          } else {
+            return response.blob();
+          }
+        })
+      }
+      
+      let coffee = fetchAndDecode('coffee.jpg');
+      let tea = fetchAndDecode('tea.jpg');
+      
+      Promise.any([coffee, tea]).then(value => {
+        let objectURL = URL.createObjectURL(value);
+        let image = document.createElement('img');
+        image.src = objectURL;
+        document.body.appendChild(image);
+      })
+      .catch(e => {
+        console.log(e.message);
+      });
+    ```
+
+- 手写 Promise.any 实现
+
+  ```javascript
+  MyPromise.any = function(promises){
+    return new Promise((resolve,reject)=>{
+      promises = Array.isArray(promises) ? promises : []
+      let len = promises.length
+      // 用于收集所有 reject 
+      let errs = []
+      // 如果传入的是一个空数组，那么就直接返回 AggregateError
+      if(len === 0) return reject(new AggregateError('All promises were rejected'))
+      promises.forEach((promise)=>{
+        promise.then(value=>{
+          resolve(value)
+        },err=>{
+          len--
+          errs.push(err)
+          if(len === 0){
+            reject(new AggregateError(errs))
+          }
+        })
+      })
+    })
+  }
+  ```
+
+  
 
 ## WeakRef
 
