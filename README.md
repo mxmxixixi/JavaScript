@@ -3950,6 +3950,146 @@ console.log("result",result)//我是mxm，年龄18
 
 - Object.is(value1,value2):比较两个值在是否相等，返回布尔值，具体值比较参考https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Global_Objects/Object/is
 
+## 第十三章 Set 和 Map 数据结构
+
+### 13.1 Set
+
+#### 13.1.1 定义
+
+- 它类似于数组，但是成员的值都是唯一的，没有重复的值，key与value相同
+- Set 结构的实例默认可遍历，它的默认遍历器生成函数就是它的`values`方法，这意味着，可以省略`values`方法，直接用`for...of`循环遍历 Set
+- Set 结构的实例与数组一样，也拥有`forEach`方法，用于对每个成员执行某种操作，没有返回值
+
+#### 13.1.2 api
+
+- Set():`Set`函数可以接受一个数组（或者具有 iterable 接口的其他数据结构）作为参数，用来初始化
+
+  ```javascript
+  const set = new Set();
+  const items = new Set([1, 2, 3, 4, 5, 5, 5, 5]);
+  const set = new Set(document.querySelectorAll('div'));
+  const a = new Set('ababbc')
+  ```
+
+- add(value):添加某个值，返回 Set 结构本身,向 Set 加入值，不会发生类型转换，NaN与NaN是相等的值
+
+  ```javascript
+  let set = new Set();
+  let a = NaN;
+  let b = NaN;
+  set.add(a);
+  set.add(b);
+  ```
+
+- size():返回`Set`实例的成员总数
+
+  ```javascript
+  const s = new Set()
+  s.add(1).add(2).add(2);
+  s.size // 2
+  ```
+
+- has(value)：返回一个布尔值，表示该值是否为`Set`的成员。
+
+  ```javascript
+  const s = new Set()
+  s.add(1).add(2).add(2);
+  s.has(2)//true
+  s.has(3)//false
+  ```
+
+- clear()：清除所有成员，没有返回值
+
+  ```javascript
+  s.has(3)//false
+  ```
+
+- keys()：获取成员的key
+
+  ```javascript
+  for (let item of set.keys()) {
+    console.log(item);
+  }
+  ```
+
+- values()：获取成员的values,Set 结构的实例默认可遍历，它的默认遍历器生成函数就是它的`values`方法，这意味着，可以省略`values`方法，直接用`for...of`循环遍历 Set
+
+  ```javascript
+  for (let item of set.values()) {
+    console.log(item);
+  }
+
+- entries():获取成员的key与value
+
+  ```javascript
+  for (let item of set.entries()) {
+    console.log(item);//['key','value']
+  }
+  ```
+
+- 同步改变原来的 Set 结构,基本思想就是先变成数组，之后更改结构，在变成Set结构
+
+  ```javascript
+  let set = new Set([1, 2, 3]);
+  set = new Set([...set].map(val => val * 2));
+  
+  let set = new Set([1, 2, 3]);
+  set = new Set(Array.from(set, val => val * 2));
+
+#### 13.1.3 实践功能
+
+- 数组去重
+
+  ```javascript
+  const arr = [...new Set([1,2,3,4,4,5,6,6])]
+  
+  const items = new Set([1, 2, 3, 4, 5,6,6]);
+  const array = Array.from(items);
+  ```
+
+- 字符串去重
+
+  ```javascript
+  const a = [...new Set('ababbc')].join('')
+  ```
+
+- set转数组
+
+  ```javascript
+  const arr = [...new Set([1,2,3,4,4,5,6,6])]
+  
+  const items = new Set([1, 2, 3, 4, 5]);
+  const array = Array.from(items);
+  ```
+
+- 数组的并集
+
+  ```javascript
+  const a = [1,2,3,4]
+  const b = [2,3,4,5,6]
+  const c = [...new Set(...a,...b)] 
+  ```
+
+- 数组的交集
+
+  ```javascript
+  const a = [1,2,3,4]
+  const b = [2,3,4,5,6]
+  const c = a.filter(v=>new Set(b).has(a))
+  ```
+
+- 数组的差集
+
+  ```javascript
+  const a = [1,2,3,4]
+  const b = [2,3,4,5,6]
+  const c = a.filter(v=>!new Set(b).has(a))
+  ```
+
+### 13.2 WeakSet
+
+
+
 ## 第十三章 Module语法
 
 ### 问题记录
