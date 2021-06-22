@@ -3956,7 +3956,7 @@ console.log("result",result)//我是mxm，年龄18
 
 #### 13.1.1 定义
 
-- 它类似于数组，但是成员的值都是唯一的，没有重复的值，key与value相同
+- 它类似于数组，但是成员的值都是唯一的，成员的值可以是任意的类型，没有重复的值，key与value相同
 - Set 结构的实例默认可遍历，它的默认遍历器生成函数就是它的`values`方法，这意味着，可以省略`values`方法，直接用`for...of`循环遍历 Set
 - Set 结构的实例与数组一样，也拥有`forEach`方法，用于对每个成员执行某种操作，没有返回值
 
@@ -4062,7 +4062,7 @@ console.log("result",result)//我是mxm，年龄18
   const array = Array.from(items);
   ```
 
-- 数组的并集
+- 数组的并集，字符串并集和数字组并集一样的原理
 
   ```javascript
   const a = [1,2,3,4]
@@ -4070,7 +4070,7 @@ console.log("result",result)//我是mxm，年龄18
   const c = [...new Set(...a,...b)] 
   ```
 
-- 数组的交集
+- 数组的交集，字符串交集和数字组交集一样的原理
 
   ```javascript
   const a = [1,2,3,4]
@@ -4078,7 +4078,7 @@ console.log("result",result)//我是mxm，年龄18
   const c = a.filter(v=>new Set(b).has(a))
   ```
 
-- 数组的差集
+- 数组的差集，字符串差集和数字组差集一样的原理
 
   ```javascript
   const a = [1,2,3,4]
@@ -4088,7 +4088,170 @@ console.log("result",result)//我是mxm，年龄18
 
 ### 13.2 WeakSet
 
+#### 13.2.1 定义
 
+- WeakSet也是不重复成员的组合
+- WeakSet的成员只能是对象，不能是基本类型
+- WeakSet存放的成员属于弱引用类型，即垃圾回收机制不会考虑在WeakSet的引用，如果除WeakSet中的引用，无其他引用，则该变量会直接被回收，这样的主要好处就是不会导致内存泄漏
+- 由于WeakSet成员有可能随时被垃圾回收，因此不能进行遍历
+
+#### 13.2.2 api
+
+- WeakSet():WeakSet 可以接受一个数组或类似数组的对象作为参数。（实际上，任何具有 Iterable 接口的对象，都可以作为 WeakSet 的参数。）该数组的所有成员，都会自动成为 WeakSet 实例对象的成员
+
+  ```javascript
+  const a = [[1, 2], [3, 4]];
+  const ws = new WeakSet(a);
+  // WeakSet {[1, 2], [3, 4]}
+  ```
+
+- add(value):向 WeakSet 实例添加一个新成员
+
+  ```javascript
+  const ws = new WeakSet();
+  ws.add({})
+  ```
+
+- delete(value):清除 WeakSet 实例的指定成员
+
+  ```javascript
+  const ws = new WeakSet();
+  ws.add(window);
+  ws.delete(window);
+  ```
+
+- has(value)：返回一个布尔值，表示某个值是否在 WeakSet 实例之中
+
+  ```javascript
+  const ws = new WeakSet();
+  ws.add(window);
+  ws.has(window)//true
+  ```
+
+13.2.3 实践功能
+
+- WeakSet 的一个用处，是储存 DOM 节点，而不用担心这些节点从文档移除时，会引发内存泄漏
+
+### 13.3 Map
+
+#### 13.3.1 定义
+
+- 它类似于对象，也是键值对的集合，但是“键”的范围不限于字符串，各种类型的值（包括对象）都可以当作键；
+- 无重复的键值
+- Object 结构提供了“字符串—值”的对应，Map 结构提供了“值—值”的对应，是一种更完善的 Hash 结构实现；
+- 如果 Map 的键是一个简单类型的值（数字、字符串、布尔值），则只要**两个值严格相等**，Map 将其视为一个键，比如`0`和`-0`就是一个键，布尔值`true`和字符串`true`则是两个不同的键。另外，`undefined`和`null`也是两个不同的键。虽然`NaN`不严格相等于自身，但 Map 将其视为同一个键
+- 如果你需要“键值对”的数据结构，Map 比 Object 更合适；
+
+#### 13.3.2 api
+
+- Map(value):Map可以接受一个数组作为参数，该数组的成员是一个个表示键值对的数组；任何具有 Iterator 接口、且每个成员都是一个双元素的数组的数据结构都可以当作`Map`构造函数的参数。这就是说，`Set`和`Map`都可以用来生成新的 Map
+
+  ```javascript
+  const map = new Map([
+    ['name', '张三'],
+    ['title', 'Author']
+  ]);
+  
+  map.size // 2
+  map.has('name') // true
+  map.get('name') // "张三"
+  map.has('title') // true
+  map.get('title') // "Author"
+  
+  //Map构造函数接受数组作为参数，实际上执行的是下面的算法
+  const items = [
+    ['name', '张三'],
+    ['title', 'Author']
+  ];
+  
+  const map = new Map();
+  
+  items.forEach(
+    ([key, value]) => map.set(key, value)
+  );
+  ```
+
+- size():Map的大小
+
+- set(key, value):设置map成员，返回的是当前的`Map`对象，因此可以采用链式写法
+
+- get(key)：获取成员的值，`get`方法读取`key`对应的键值，如果找不到`key`，返回`undefined`
+
+- has(key)：`has`方法返回一个布尔值，表示某个键是否在当前 Map 对象之中
+
+- delete(key):delete`方法删除某个键，返回`true`。如果删除失败，返回`false
+
+- clear():清空
+
+- 遍历方法同set的方法
+
+#### 13.3.3 使用场景
+
+- Map转数组,比较快速的方法是使用扩展运算符（`...`）
+
+  ```javascript
+  const map = new Map([
+    [1, 'one'],
+    [2, 'two'],
+    [3, 'three'],
+  ]);
+  
+  [...map.keys()]
+  // [1, 2, 3]
+  
+  [...map.values()]
+  // ['one', 'two', 'three']
+  
+  [...map.entries()]
+  // [[1,'one'], [2, 'two'], [3, 'three']]
+  
+  [...map]
+  // [[1,'one'], [2, 'two'], [3, 'three']]
+  ```
+
+- Map 转为对象:如果所有 Map 的键都是字符串，它可以无损地转为对象
+
+  ```javascript
+  function strMapToObj(strMap) {
+    let obj = Object.create(null);
+    for (let [k,v] of strMap) {
+      obj[k] = v;
+    }
+    return obj;
+  }
+  
+  const myMap = new Map()
+    .set('yes', true)
+    .set('no', false);
+  strMapToObj(myMap)
+  // { yes: true, no: false }
+  ```
+
+- 对象转为 Map
+
+  ```javascript
+  let obj = {"a":1, "b":2};
+  let map = new Map(Object.entries(obj));
+  
+  
+  
+  function objToStrMap(obj) {
+    let strMap = new Map();
+    for (let k of Object.keys(obj)) {
+      strMap.set(k, obj[k]);
+    }
+    return strMap;
+  }
+  
+  objToStrMap({yes: true, no: false})
+  // Map {"yes" => true, "no" => false}
+  
+  ```
+
+### 13.4 WeakMap
+
+- WeakMap原理同WeakSet
+- `WeakMap`只接受对象作为键名（`null`除外），不接受其他类型的值作为键名
 
 ## 第十三章 Module语法
 
