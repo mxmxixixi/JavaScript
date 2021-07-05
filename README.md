@@ -4333,17 +4333,225 @@ Promise.reject('foo')
 Promise.all([])//状态不定：所有Promise都成功，才会进入resolve，只要有一个失败，就会进入reject
 Promise.allSettled([])//状态固定(成功):所有Promise完成后，该方法返回的新的 Promise 实例，一旦结束，状态总是成功，不会根据任务的状态返回不同的状态
 Promise.race([])//状态不定：有Promise任务完成，则结果变成任务的状态
-Promise.any([])//状态不定：要参数实例有一个变成成功状态，包装实例就会变成成功状态；如果所有参数实例都变成失败状态，包装实例就会变成失败状态。
+Promise.any([])//状态不定：要参数实例有一个变成成功状态，包装实例就会变成成功状态；如果所有参数实例都变成失败状态，包装实例就会变成失败状态。使用场景：从最快的服务器检索资源，显示第一张已加载的图片
 ```
 
 ##### 执行时序
 
 - 宏任务：需要进行排队，一般异步任务都是宏任务;script` 、`setTimeout`、`setInterval` 、`setImmediate` 、`I/O` 、`UI rendering` 、 `postMessage` 、 `MessageChannel
-- 微任务：不需要进行排队，直接进入队列，promise.then是微任务;`MutationObserver`、`Promise.then()或catch()`、`Promise为基础开发的其它技术，比如fetch API`、`V8`的垃圾回收过程、`Node独有的process.nextTick` 、 `Object.observe`（已废弃；`Proxy` 对象替代）
+- 微任务：不需要进行排队，直接进入微任务队列，promise.then是微任务;`MutationObserver`、`Promise.then()或catch()`、`Promise为基础开发的其它技术，比如fetch API`、`V8`的垃圾回收过程、`Node独有的process.nextTick` 、 `Object.observe`（已废弃；`Proxy` 对象替代）
 
-##### async
+##### 手写Promise
 
-async与await配套使用
+> 主要完成以下几点功能，按照功能的顺序进行实现
+
+- Promise共有三种状态：pending，fulfilled，rejected，通过resolve，reject方法来更换状态
+- resolve方法把pending状态变成fulfilled状态，reject方法把pending状态变成rejected状态
+- 在异步函数中调用resolve、reject方法时，then方法需要放入缓存队列中，resolve、reject调用时执行缓存队列中的函数
+- then方法可以连续调用，也就是需要放到缓存队列中，then方法可以实现链式调用，也就是then方法返回一个Promise，返回的Promise不能是自己
+- 使用静态方法实现Promise.resolve()、Promise.rejected()、返回的值也是Promise
+- resolve、reject、then方法需要进行容错处理，使用try{}catch(){}
+- 使用queueMicrotask进行创建微任务
+- finally主要的特点是无论成功还是失败都会走一遍，它是then的语法糖，直接调用then方法就可以
+- catch 方法是 then 方法的语法糖，只接受 rejected 态的数据。
+
+```javascript
+const PENDING = 'pending';
+const FULFILLED = 'fulfilled';
+const REJECTED = 'rejected'
+class MyPromise {
+  constructor(fun) {
+    try {
+      fun(this.resolve, this.reject)
+    } catch (error) {
+      this.reject(error)
+    } 
+  }
+  status = PENDING
+  value = null
+  reason = null
+  onFulfilledCallBack = []
+  onRejectedCallBack = []
+  resolve = (value) => {
+    if (this.status === PENDING) {
+      this.status = FULFILLED
+      this.value = value
+      if (this.onFulfilledCallBack.length) {
+        this.onFulfilledCallBack.forEach(v => {
+          v(value)
+        })
+      }
+    }
+  }
+  reject = (reason) => {
+    if (this.status === PENDING) {
+      this.status = REJECTED
+      this.reason = reason
+      if (this.onRejectedCallBack.length) {
+        this.onRejectedCallBack.forEach(v => {
+          v(reason)
+        })
+      }
+    }
+  }
+  then = (onFulfilled: Function = (value) => value, onRejected: Function = (reason) => reason) => {
+    const promiseNew = new MyPromise((resolve, reject) => {
+      if (this.status === PENDING) {
+        this.onFulfilledCallBack.push(() => {
+          queueMicrotask(() => {
+            try {
+              const thenReturn = onFulfilled(this.value)
+              this.resolvePromise(thenReturn, promiseNew, resolve, reject)
+            } catch (error) {
+              reject(error)
+            }
+          })
+        })
+        this.onRejectedCallBack.push(() => {
+          queueMicrotask(() => {
+            try {
+              const thenReturn = onRejected(this.reason)
+              this.resolvePromise(thenReturn, promiseNew, resolve, reject)
+            } catch (error) {
+              reject(error)
+            }
+          })
+        })
+      }
+      if (this.status === FULFILLED) {
+        queueMicrotask(() => {
+          try {
+            const thenReturn = onFulfilled(this.value)
+            this.resolvePromise(thenReturn, promiseNew, resolve, reject)
+          } catch (error) {
+            reject(error)
+          }
+        })
+      }
+      if (this.status === REJECTED) {
+        queueMicrotask(() => {
+          try {
+            const thenReturn = onRejected(this.reason)
+            this.resolvePromise(thenReturn, promiseNew, resolve, reject)
+          } catch (error) {
+            reject(error)
+          }
+        })
+      }
+    })
+    return promiseNew
+  }
+  resolvePromise = (thenReturn, promiseNew, resolve, reject) => {
+    if (thenReturn === promiseNew) {
+      reject(new TypeError('#<Promise> no same'))
+    }
+    if (thenReturn instanceof MyPromise) {
+      thenReturn.then(resolve, reject)
+    } else {
+      resolve(thenReturn)
+    }
+  }
+  static resolve = (value) => {
+    if (value instanceof MyPromise) {
+      return value
+    }
+    return new MyPromise((resolve) => {
+      resolve(value)
+    })
+  }
+  static reject = (reason) => {
+    return new MyPromise((resolve, reject) => {
+      reject(reason)
+    })
+  }
+  finally = (callBack)=>{
+    return this.then((value)=>{
+      return  MyPromise.resolve(callBack()).then(() => value)
+    },(reason)=>{
+      return  MyPromise.reject(callBack()).then(() => reason)
+    })
+  }
+  catch = (callBack) => {
+    return this.then(null,callBack)
+  }
+}
+```
+
+##### 手写Promise.all
+
+- 入参是一个数组，数组的每一项都是Promise
+- 返回是一个Promise,任意一个 `promise` 被 `reject` ，就会立即被 `reject` ，并且 `reject` 的是第一个抛出的错误信息，只有所有的 `promise` 都 `resolve` 时才会 `resolve` 所有的结果
+- 只有所有的Promise都成功返回成功状态的Promise，否则返回失败状态的Promise
+
+```tsx
+Promise.all = (promises) => {
+  if(!(promises instanceof Array)){
+    return Promise.reject(new TypeError('arr must be an array.'))
+  }
+  return new Promise((resolve,reject)=>{
+    const resolvedData = []
+    promises.forEach((v,index)=>{
+      v.then((result)=>{
+        resolvedData.push(result)
+      }).catch(error=>{
+        reject({message:error,index})
+      })
+    })
+    if(resolvedData.length === promises.length){
+      resolve(resolvedData)
+    }
+  })
+}
+```
+
+##### 手写Promise.any
+
+- 入参是一个数组，数组的每一项都是Promise
+- 返回是一个Promise,任意一个 `promise` 被 `resolve` ，就会立即被 `resolve` ，并且 `resolve` 的是第一个正确结果，只有所有的 `promise` 都 `reject` 时才会 `reject` 所有的失败信息
+- 只要有一个Promise返回状态为成功，则返回成功的Promise，否则返回失败的Promise
+
+```tsx
+Promise.any = (promises) => {
+  if(!(promises instanceof Array)){
+    return Promise.reject(new TypeError('arr must be an array.'))
+  }
+  return new Promise((resolve,reject)=>{
+    const rejectedData = []
+    promises.forEach((v,index)=>{
+      v.then((result)=>{
+        resolve(result)
+      }).catch(error=>{
+        rejectedData.push(error)
+      })
+    })
+    if(rejectedData.length === promises.length){
+      reject(rejectedData)
+    }
+  })
+}
+```
+
+##### 手写Promise.race
+
+- 入参是一个数组，数组的每一项都是Promise
+- 返回是第一个有结果的Promise
+
+```tsx
+Promise.race = (promises) => {
+  if(!(promises instanceof Array)){
+    return Promise.reject(new TypeError('arr must be an array.'))
+  }
+  return new Promise((resolve,reject)=>{
+    promises.forEach((v,index)=>{
+      v.then((result)=>{
+        resolve(result)
+      }).catch(error=>{
+        reject(error)
+      })
+    })
+  })
+}
+```
 
 ##### 事件循环
 
@@ -4458,6 +4666,23 @@ Symbol.keyFor(s2) // undefined
 ## 第二十一 Class 的继承
 
 > extends实现思想和寄生组合式继承一样
+
+# ECMAScript2017(Es8)
+
+## Async
+
+- async 函数是 Generator 函数的语法糖
+- `async`函数就是将 Generator 函数的星号（`*`）替换成`async`，将`yield`替换成`await`，仅此而已
+- async与await配套使用
+- `async`函数对 Generator 函数的改进，体现在以下四点
+  - 内置执行器:不需要yield一步一步执行
+  - 更好的语义:`async`和`await`，比起星号和`yield`，语义更清楚了。`async`表示函数里有异步操作，`await`表示紧跟在后面的表达式需要等待结果
+  - 更广的适用性
+  - `async`函数的返回值是 Promise 对象
+- 当函数执行的时候，一旦遇到`await`就会先返回，等到异步操作完成，再接着执行函数体内后面的语句
+- `async`函数返回的 Promise 对象，必须等到内部所有`await`命令后面的 Promise 对象执行完，才会发生状态改变，除非遇到`return`语句或者抛出错误。也就是说，只有`async`函数内部的异步操作执行完，才会执行`then`方法指定的回调函数。
+- `await`命令后面是一个 Promise 对象，返回该对象的结果。如果不是 Promise 对象，就直接返回对应的值
+- `await`命令只能出现在 async 函数内部，否则都会报错
 
 # ECMAScript2018(Es9)
 
